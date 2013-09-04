@@ -12,11 +12,12 @@
 
 int main(int argc, char** argv) {
 	int status, pid;
+	argv++;
 	struct timeval before;
 	gettimeofday(&before, NULL);
 	pid = fork();
 	if(pid == 0) {
-		int error = execvp(argv[0], ++argv);
+		int error = execvp(argv[0], argv);
 		if(error == -1) {
 			if(errno == ENOENT) {
 					printf("Filename or path not found.\n");
