@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 		cputime = (usage.ru_stime.tv_sec * 1000) + (usage.ru_stime.tv_usec / 1000);
 		usertime = (usage.ru_utime.tv_sec * 1000) + (usage.ru_utime.tv_usec / 1000);
 		realtime = ((after.tv_sec * 1000) + (after.tv_usec / 1000)) - ((before.tv_sec * 1000) + (before.tv_usec / 1000));
-		printf("Process statistics for process %d: \n", pid);
+		printf("Process statistics for #%d: \n", pid);
 		printf("	Elapsed Time: %ld ms\n", realtime);
 		printf("	CPU Time: %ld ms\n", cputime);
 		printf("	User Time: %ld ms\n", usertime);
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 }
 
 void getCommand(char** args) {
-	printf("--> ");
+	printf("==] ");
 	char* input = malloc(sizeof(char)*500);
 	fgets(input, 500, stdin);
 	int i = 0;
@@ -81,11 +81,12 @@ int makeChild(char** args) {
 			printf("Command: %s\n", args[0]);
 		#endif
 		int error = execvp(args[0], args);
-		if(error == -1)
+		if(error == -1) {
 			if(errno == ENOENT)
 				fprintf(stderr, "Command not found.\n");
 			else
-				fprintf(stderr, "An error occurred while executing the command. Please try again.\n");
+				fprintf(stderr, "An error occurred while executing the command. Please try again.\n");	
+		}
 	}
 	return cpid;
 }
