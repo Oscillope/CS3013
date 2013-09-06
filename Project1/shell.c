@@ -21,9 +21,9 @@ int main(int argc, char** argv) {
 	struct timeval after;
 	long int cputime, usertime, realtime;
 	while(1) {
-		char** args = malloc(sizeof(char*)*500);
+		char** args = malloc(sizeof(char*)*65);
+		printf("==] ");
 		getCommand(args);
-		checkCmd(args);
 		gettimeofday(&before, NULL);
 		pid = makeChild(args);
 		wait(&status);
@@ -51,15 +51,25 @@ int main(int argc, char** argv) {
 }
 
 void getCommand(char** args) {
-	printf("==] ");
-	char* input = malloc(sizeof(char)*500);
-	fgets(input, 500, stdin);
+	char* input = malloc(sizeof(char)*128);
+	fgets(input, 128, stdin);
+	if(feof(stdin)) {
+		free(args);
+		exit(0);
+	}
 	int i = 0;
-	char* temp = malloc(sizeof(char)*500);
+	char* temp = malloc(sizeof(char)*128);
 	args[0] = strdup(strtok(input, " "));
 	#ifdef DEBUG
 		printf("Arg 0: %s\n", args[0]);
 	#endif
+	if(args[0][0] == '\n') {
+		#ifdef DEBUG
+			printf("Stray newline detected!\n");
+		#endif
+		args[0] = NULL;
+		getCommand(args);
+	}
 	while((temp = strtok(NULL, " ")) != NULL) {
 		i++;
 		#ifdef DEBUG
@@ -71,6 +81,7 @@ void getCommand(char** args) {
 	args[i+1] = NULL;
 	free(input);
 	free(temp);
+	checkCmd(args);
 	return;
 }
 
@@ -92,8 +103,10 @@ int makeChild(char** args) {
 }
 
 void checkCmd(char** args) {
-	if(strcmp(args[0], "exit") == 0)
+	if(strcmp(args[0], "exit") == 0) {
+		free(args);
 		exit(0);
+	}
 	else if(strcmp(args[0], "cd") == 0) {
 		if(chdir(args[1]) == -1)
 			switch(errno) {
@@ -113,8 +126,8 @@ void checkCmd(char** args) {
 					fprintf(stderr, "Not a directory.\n");
 					break;
 			};
-		free(args);
-		args = malloc(sizeof(char*)*500);
+		args[0] = NULL;
+		printf("==] ");
 		getCommand(args);
 	}
 	return;

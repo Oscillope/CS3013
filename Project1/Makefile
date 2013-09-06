@@ -3,7 +3,7 @@ CFLAGS = -Wall
 
 all: runCommand shell
 debug: CFLAGS += -DDEBUG -ggdb
-debug: shell
+debug: runCommand shell
 runCommand: runCommand.o
 	$(CC) $(CFLAGS) runCommand.o -o runCommand
 runCommand.o:
