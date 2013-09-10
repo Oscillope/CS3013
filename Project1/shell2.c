@@ -53,14 +53,21 @@ int main(int argc, char** argv) {
 			scheduler[jobs] = malloc(sizeof(job));
 			scheduler[jobs]->name = strdup(args[0]);
 			scheduler[jobs]->pid = makeChild(args);
-			scheduler[jobs]->running = TRUE;
-			free(args);
-			scheduler[jobs]->jobn = jobs + 1;
-			printf("[%d] %d\n", scheduler[jobs]->jobn, scheduler[jobs]->pid);
-			gettimeofday(&(scheduler[jobs]->before), NULL);
-			jobs++;
-			running++;
-			scheduler = realloc(scheduler, sizeof(job*)*(jobs+1));
+			if(scheduler[jobs]->pid == CMD_ERR) {
+				free(scheduler[jobs]->name);
+				free(scheduler[jobs]);
+				exit(1);
+			}
+			else {
+				scheduler[jobs]->running = TRUE;
+				free(args);
+				scheduler[jobs]->jobn = jobs + 1;
+				printf("[%d] %d\n", scheduler[jobs]->jobn, scheduler[jobs]->pid);
+				gettimeofday(&(scheduler[jobs]->before), NULL);
+				jobs++;
+				running++;
+				scheduler = realloc(scheduler, sizeof(job*)*(jobs+1));
+			}
 		}
 		else if(cmd == CMD_JOBS) {
 			int i;
