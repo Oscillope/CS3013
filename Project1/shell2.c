@@ -69,9 +69,43 @@ int main(int argc, char** argv) {
 					printf("[%d] %d %s\n", scheduler[i]->jobn, scheduler[i]->pid, scheduler[i]->name);
 			}
 		}
-		else if(cmd == CMD_EXIT) {
-			if(running != 0)
+		else if(cmd == CMD_EXIT || cmd == CMD_EOF) {
+			if(running != 0) {
 				fprintf(stderr, "There are still jobs waiting to complete.\n");
+				if(cmd == CMD_EOF) {
+					job* curjob;
+					int i;
+					for(i = 0; i < jobs; i++) {
+						if(scheduler[i]->running == TRUE)
+							curjob = scheduler[i];
+							printf("Waiting on job %d (%s).\n", curjob->jobn, curjob->name);
+							wait4(curjob->pid, &status, 0, &usage);
+							gettimeofday(&(curjob->after), NULL);
+							#ifdef DEBUG
+								printf("\nChild %d died with status %d.\n\n", pid, status);
+							#endif
+							if(WEXITSTATUS(status) != 1) {
+								cputime = (usage.ru_stime.tv_sec * 1000) + (usage.ru_stime.tv_usec / 1000);
+								usertime = (usage.ru_utime.tv_sec * 1000) + (usage.ru_utime.tv_usec / 1000);
+								realtime = ((curjob->after.tv_sec * 1000) + (curjob->after.tv_usec / 1000)) - ((curjob->before.tv_sec * 1000) + (curjob->before.tv_usec / 1000));
+								printf("\n--> Background job %d (%s) complete.\n", curjob->jobn, curjob->name);
+								printf("Process statistics for #%d: \n", pid);
+								printf("	Elapsed Time: %ld ms\n", realtime);
+								printf("	CPU Time: %ld ms\n", cputime);
+								printf("	User Time: %ld ms\n", usertime);
+								printf("	Involuntary Context Switches: %ld\n", usage.ru_nivcsw );
+								printf("	Voluntary Context Switches: %ld\n", usage.ru_nvcsw);
+								printf("	Page Faults: %ld\n", usage.ru_majflt);
+								printf("	Reclaimed Page Faults: %ld\n", usage.ru_minflt);
+								if(WEXITSTATUS(status) != 0)
+									printf("\nProcess exited with status: %d\n", WEXITSTATUS(status));
+							}
+							printf("\n");
+							curjob->running = FALSE;
+							running--;
+					}
+				}
+			}
 			else {
 				int i;
 				for(i = 0; i < jobs; i++) {
@@ -125,8 +159,7 @@ int getCommand(char** args) {
 	char* input = malloc(sizeof(char)*130);
 	fgets(input, 130, stdin);
 	if(feof(stdin)) {
-		free(args);
-		exit(0);
+		return CMD_EOF;
 	}
 	#ifdef DEBUG
 		printf("Length: %d Last character: %c\n", strlen(input), input[128]);

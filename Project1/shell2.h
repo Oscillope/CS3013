@@ -6,7 +6,8 @@
 #define CMD_LONG 3
 #define CMD_BG 4
 #define CMD_EXIT 5
-#define CMD_JOBS 6
+#define CMD_EOF 6
+#define CMD_JOBS 7
 #define CMD_ERR -1
 #define TRUE 0
 #define FALSE 1
