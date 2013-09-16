@@ -3,12 +3,12 @@
 #include <linux/syscalls.h>
 
 unsigned long **sys_call_table;
-asmlinkage long (*ref_sys_open)(const char *pathname, int flags);
+asmlinkage long (*ref_sys_open)(const char *pathname, int flags, mode_t mode);
 
-asmlinkage long new_sys_open(const char* pathname, int flags) {
+asmlinkage long new_sys_open(const char* pathname, int flags, mode_t mode) {
 	if(current_uid() >= 1000)
 		printk(KERN_INFO "User %d is opening %s", current_uid(), pathname);
-	return ref_sys_open(pathname, flags);
+	return ref_sys_open(pathname, flags, mode);
 }
 static unsigned long **find_sys_call_table(void) {
 	unsigned long int offset = PAGE_OFFSET; unsigned long **sct;
