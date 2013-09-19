@@ -1,6 +1,8 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/syscalls.h>
+#include <linux/list.h>
+#include <asm/errno.h>
 
 unsigned long **sys_call_table;
 asmlinkage long (*ref_sys_cs3013_syscall2)(void);
@@ -18,12 +20,30 @@ struct processinfo {
     long long sys_time;     // CPU time in system mode (microseconds)
     long long cutime;       // user time of children (microseconds)
     long long cstime;       // system time of children (microseconds)
-}
+};
 
-asmlinkage long cs3013_syscall2(struct processinfo *info) {
+asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
     struct task_struct *current_task;
+    struct processinfo kinfo;
     current_task = get_current();
-    info->state = current_task->state;
+    kinfo.state = current_task->state;
+    kinfo.pid = current_task->pid;
+    kinfo.parent_pid = current_task->parent->pid;
+    if(!list_empty_careful(&current_task->children)) {
+		struct task_struct* child_task;
+		child_task = list_entry(&(current_task->children), struct task_struct, sibling);
+		kinfo.youngest_child = child_task->pid;
+	}
+	if(!list_empty_careful(&current_task->sibling)) {
+		struct task_struct* sibling_task;
+		sibling_task = list_entry(&(current_task->sibling), struct task_struct, sibling);
+		kinfo.younger_sibling = sibling_task->pid;
+	}
+	kinfo.older_sibling = current_task->group_leader->pid;
+	kinfo.uid = current_task->loginuid;
+	
+	if(copy_to_user(info, &kinfo, sizeof kinfo))
+		return EFAULT;
 	return 0;
 }
 static unsigned long **find_sys_call_table(void) {
