@@ -1,4 +1,4 @@
-obj-m := syscalltest.o new_open.o new_close.o
+obj-m := syscalltest.o new_open.o new_close.o new_syscall2.o
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 
