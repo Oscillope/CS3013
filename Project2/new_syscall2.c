@@ -2,6 +2,8 @@
 #include <linux/module.h>
 #include <linux/syscalls.h>
 #include <linux/list.h>
+#include <linux/time.h>
+#include <asm/cputime.h>
 #include <asm/errno.h>
 
 unsigned long **sys_call_table;
@@ -41,7 +43,9 @@ asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
 	}
 	kinfo.older_sibling = current_task->group_leader->pid;
 	kinfo.uid = current_task->loginuid;
-	
+	kinfo.start_time = timespec_to_ns(&current_task->start_time);
+	kinfo.user_time = cputime_to_usecs(current_task->utime);
+	kinfo.sys_time = cputime_to_usecs(current_task->stime);
 	if(copy_to_user(info, &kinfo, sizeof kinfo))
 		return EFAULT;
 	return 0;

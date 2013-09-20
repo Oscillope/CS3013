@@ -38,5 +38,8 @@ int main () {
 	printf("pid: %d\n", info->pid);
 	printf("parent pid: %d\n", info->parent_pid);
 	printf("youngest child pid: %d\n", info->youngest_child);
+	printf("start time: %lld\n", info->start_time);
+	printf("user time: %lld\n", info->user_time);
+	printf("system time: %lld\n", info->sys_time);
 	return 0;
 }
