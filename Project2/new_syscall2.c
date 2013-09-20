@@ -31,19 +31,31 @@ asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
     kinfo.state = current_task->state;
     kinfo.pid = current_task->pid;
     kinfo.parent_pid = current_task->parent->pid;
-    if(!list_empty_careful(&current_task->children)) {
+    if(!list_empty_careful(&(current_task->children))) {
 		struct task_struct* child_task;
+		printk(KERN_INFO "I've got kids! %d", list_empty(&(current_task->children)));
 		child_task = list_entry(&(current_task->children), struct task_struct, sibling);
 		kinfo.youngest_child = child_task->pid;
+		kinfo.cutime = cputime_to_usecs(child_task->utime);
+		kinfo.cstime = cputime_to_usecs(child_task->stime);
+	}
+	else {
+		printk(KERN_INFO "I've got no kids! %d", list_empty(&(current_task->children)));
+		kinfo.youngest_child = -1;
+		kinfo.cutime = -1;
+		kinfo.cstime = -1;
 	}
 	if(!list_empty_careful(&current_task->sibling)) {
 		struct task_struct* sibling_task;
 		sibling_task = list_entry(&(current_task->sibling), struct task_struct, sibling);
 		kinfo.younger_sibling = sibling_task->pid;
 	}
+	else {
+		kinfo.younger_sibling = -1;
+	}
 	kinfo.older_sibling = current_task->group_leader->pid;
 	kinfo.uid = current_task->loginuid;
-	kinfo.start_time = timespec_to_ns(&current_task->start_time);
+	kinfo.start_time = timespec_to_ns(&current_task->real_start_time);
 	kinfo.user_time = cputime_to_usecs(current_task->utime);
 	kinfo.sys_time = cputime_to_usecs(current_task->stime);
 	if(copy_to_user(info, &kinfo, sizeof kinfo))

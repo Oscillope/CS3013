@@ -2,25 +2,11 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "processinfo.h"
 // These values MUST match the unistd_32.h modifications:
 #define __NR_cs3013_syscall1 349
 #define __NR_cs3013_syscall2 350
 #define __NR_cs3013_syscall3 351
-
-struct processinfo {
-    long state;             // current state of process
-    pid_t pid;              // process ID of this process
-    pid_t parent_pid;       // process ID of parent
-    pid_t youngest_child;   // process ID of youngest child
-    pid_t younger_sibling;  // pid of next younger sibling
-    pid_t older_sibling;    // pid of next older sibling
-    uid_t uid;              // user ID of process owner
-    long long start_time;   // process start time in nanoseconds since boot time
-    long long user_time;    // CPU time in user mode (microseconds)
-    long long sys_time;     // CPU time in system mode (microseconds)
-    long long cutime;       // user time of children (microseconds)
-    long long cstime;       // system time of children (microseconds)
-};
 
 long testCall1 ( void) {
 	return (long) syscall(__NR_cs3013_syscall1);
@@ -35,11 +21,18 @@ int main () {
 	printf("The return values of the system calls are:\n");
 	printf("\tcs3013_syscall1: %ld\n", testCall1());
 	printf("\tcs3013_syscall2: %ld\n", testCall2(info));
-	printf("pid: %d\n", info->pid);
-	printf("parent pid: %d\n", info->parent_pid);
-	printf("youngest child pid: %d\n", info->youngest_child);
-	printf("start time: %lld\n", info->start_time);
-	printf("user time: %lld\n", info->user_time);
-	printf("system time: %lld\n", info->sys_time);
+	printf("_________________________________\n");
+	printf("|\tProcess statistics\t|\n");
+	printf("|PID: %d\t\t\t|\n", info->pid);
+	printf("|Parent PID: %d\t\t|\n", info->parent_pid);
+	printf("|Youngest child PID: %d\t\t|\n", info->youngest_child);
+	printf("|Oldest sibling PID: %d\t|\n", info->older_sibling);
+	printf("|Start time: %lld\t|\n", info->start_time);
+	printf("|User time: %lld\t\t|\n", info->user_time);
+	printf("|System time: %lld\t\t\t|\n", info->sys_time);
+	printf("|Child user time: %lld\t\t|\n", info->cutime);
+	printf("|Child system time: %lld\t\t|\n", info->cstime);
+	printf("_________________________________\n");
+	free(info);
 	return 0;
 }
