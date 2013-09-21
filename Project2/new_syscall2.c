@@ -19,11 +19,18 @@ asmlinkage long new_sys_cs3013_syscall2(struct processinfo *info) {
     kinfo.parent_pid = current_task->parent->pid;
     if(!list_empty_careful(&(current_task->children))) {
 		struct task_struct* child_task;
+		struct list_head cursor;
+		long long test_time = 0;
 		printk(KERN_INFO "I've got kids! %d", list_empty(&(current_task->children)));
-		child_task = list_entry(&(current_task->children), struct task_struct, sibling);
-		kinfo.youngest_child = child_task->pid;
-		kinfo.cutime = cputime_to_usecs(child_task->utime);
-		kinfo.cstime = cputime_to_usecs(child_task->stime);
+		while(&cursor != current_task->children.prev) { //Make sure we don't just loop forever
+			list_for_each(&cursor, &(current_task->children));
+			child_task = list_entry(&(current_task->children), struct task_struct, children);
+			if(child_task->start_time > test_time) {
+				kinfo.youngest_child = child_task->pid;
+				kinfo.cutime = cputime_to_usecs(child_task->utime);
+				kinfo.cstime = cputime_to_usecs(child_task->stime);
+			}
+		}
 	}
 	else {
 		printk(KERN_INFO "I've got no kids! %d", list_empty(&(current_task->children)));
