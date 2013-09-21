@@ -15,6 +15,10 @@
 #define __NR_cs3013_syscall2 350
 #define __NR_cs3013_syscall3 351
 
+long testCall2 (struct processinfo* info) {
+	return (long) syscall(__NR_cs3013_syscall2, info);
+}
+
 int main(int argc, char** argv) {
 	int status, pid;
 	argv++;
@@ -64,8 +68,4 @@ int main(int argc, char** argv) {
 	printf("_________________________________\n");
 	free(info);
 	return status;
-}
-
-long testCall2 (struct processinfo* info) {
-	return (long) syscall(__NR_cs3013_syscall2, info);
 }
