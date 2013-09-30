@@ -53,8 +53,10 @@ void pirate(void) {
 				room_state = PIRATE;
 			pthread_mutex_unlock(&state_mutex);
 		}
+		pthread_mutex_lock(&state_mutex);
 		if(room_state == PIRATE && pirates_waiting > 0) {
 			if(pthread_mutex_trylock(&chair1) != EBUSY) {
+				pthread_mutex_unlock(&state_mutex);
 				printf("Getting a costume in chair 1.\n");
 				pthread_mutex_lock(&state_mutex);
 				pirates_waiting--;
@@ -71,6 +73,7 @@ void pirate(void) {
 				}
 			}
 			else if(pthread_mutex_trylock(&chair2) != EBUSY) {
+				pthread_mutex_unlock(&state_mutex);
 				printf("Getting a costume in chair 2.\n");
 				pthread_mutex_lock(&state_mutex);
 				pirates_waiting--;
@@ -102,6 +105,7 @@ void pirate(void) {
 				}
 			}
 			else {
+				pthread_mutex_unlock(&state_mutex);
 				pthread_mutex_lock(&room_lock);
 				//printf("zzzzz\n");
 				pthread_cond_wait(&room_cv, &room_lock);
@@ -110,6 +114,7 @@ void pirate(void) {
 			}
 		}
 		else {
+			pthread_mutex_unlock(&state_mutex);
 			pthread_mutex_lock(&room_lock);
 			//printf("This isn't our room!\n");
 			pthread_cond_wait(&room_cv, &room_lock);
@@ -126,8 +131,10 @@ void ninja(void) {
 				room_state = NINJA;
 			pthread_mutex_unlock(&state_mutex);
 		}
+		pthread_mutex_lock(&state_mutex);
 		if(room_state == NINJA && ninjas_waiting >= 0) {
 			if(pthread_mutex_trylock(&chair1) != EBUSY) {
+				pthread_mutex_unlock(&state_mutex);
 				printf("Getting a ninja suit in chair 1.\n");
 				pthread_mutex_lock(&state_mutex);
 				ninjas_waiting--;
@@ -144,6 +151,7 @@ void ninja(void) {
 				}
 			}
 			else if(pthread_mutex_trylock(&chair2) != EBUSY) {
+				pthread_mutex_unlock(&state_mutex);
 				printf("Getting a ninja suit in chair 2.\n");
 				pthread_mutex_lock(&state_mutex);
 				ninjas_waiting--;
@@ -175,6 +183,7 @@ void ninja(void) {
 				}
 			}
 			else {
+				pthread_mutex_unlock(&state_mutex);
 				pthread_mutex_lock(&room_lock);
 				//printf("........\n");
 				pthread_cond_wait(&room_cv, &room_lock);
@@ -182,6 +191,7 @@ void ninja(void) {
 			}
 		}
 		else {
+			pthread_mutex_unlock(&state_mutex);
 			pthread_mutex_lock(&room_lock);
 			//printf("SEPPUKU\n");
 			pthread_cond_wait(&room_cv, &room_lock);
