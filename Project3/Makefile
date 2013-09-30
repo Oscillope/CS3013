@@ -10,5 +10,10 @@ problem1: problem1.o
 problem1.o:
 	$(CC) $(CFLAGS) -c problem1.c
 	
+problem2: problem2.o
+	$(CC) $(CFLAGS) problem2.o -o problem2
+problem2.o:
+	$(CC) $(CFLAGS) -c problem2.c
+	
 clean:
 	rm -f *~ *.o
