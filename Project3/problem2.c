@@ -14,9 +14,7 @@ int main(int argc, char** argv) {
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	int i;
 	for(i = 0; i < NUM_CARS; i++)
-		pthread_create(car_threads[i], &attr, (void*)&masshole, NULL);
-	while(1) {
-		
-	}
+		pthread_create(car_threads[i], &attr, (void*)&car, NULL);
+	pthread_join(car_threads[0], NULL);
 	return 0;
 }
