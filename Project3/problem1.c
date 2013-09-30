@@ -59,8 +59,8 @@ void pirate(void) {
 				pthread_mutex_lock(&state_mutex);
 				pirates_waiting--;
 				pthread_mutex_unlock(&state_mutex);
-				sleep(2);
-				printf("Done! %d of us are left, and %d of them. -- Chair 1\n", pirates_waiting, ninjas_waiting);
+				sleep(3);
+				printf("Done! %d pirates, and %d ninjas. -- Chair 1 Pirate\n", pirates_waiting, ninjas_waiting);
 				pthread_mutex_unlock(&chair1);
 				pthread_cond_broadcast(&room_cv);
 				sleep(10);
@@ -76,18 +76,18 @@ void pirate(void) {
 				pirates_waiting--;
 				pthread_mutex_unlock(&state_mutex);
 				sleep(2);
-				printf("Done! %d of us are left, and %d of them. -- Chair 2\n", pirates_waiting, ninjas_waiting);
-				if(ninjas_waiting > pirates_waiting) {
-					pthread_mutex_lock(&state_mutex);
+				printf("Done! %d pirates, and %d ninjas. -- Chair 2 Pirate\n", pirates_waiting, ninjas_waiting);
+				if(ninjas_waiting > 0) {
 					pthread_mutex_lock(&chair1);
+					pthread_mutex_lock(&state_mutex);
 					printf("I'm the last one here!\n");
 					room_state = NINJA;
 					pthread_mutex_unlock(&chair1);
 					pthread_mutex_unlock(&state_mutex);
 				}
 				else if(pirates_waiting == 0) {
-					pthread_mutex_lock(&state_mutex);
 					pthread_mutex_lock(&chair1);
+					pthread_mutex_lock(&state_mutex);
 					room_state = EMPTY;
 					pthread_mutex_unlock(&chair1);
 					pthread_mutex_unlock(&state_mutex);
@@ -128,12 +128,12 @@ void ninja(void) {
 		}
 		if(room_state == NINJA && ninjas_waiting >= 0) {
 			if(pthread_mutex_trylock(&chair1) != EBUSY) {
-				printf("Embodying the night in chair 1.\n");
+				printf("Getting a ninja suit in chair 1.\n");
 				pthread_mutex_lock(&state_mutex);
 				ninjas_waiting--;
 				pthread_mutex_unlock(&state_mutex);
 				sleep(2);
-				printf("It is finished. %d of my friends are at the door, we are %d. -- Chair 1\n", pirates_waiting, ninjas_waiting);;
+				printf("Done! %d pirates, and %d ninjas. -- Chair 1 Ninja\n", pirates_waiting, ninjas_waiting);;
 				pthread_mutex_unlock(&chair1);
 				pthread_cond_broadcast(&room_cv);
 				sleep(10);
@@ -144,23 +144,23 @@ void ninja(void) {
 				}
 			}
 			else if(pthread_mutex_trylock(&chair2) != EBUSY) {
-				printf("Embodying the night in chair 2.\n");
+				printf("Getting a ninja suit in chair 2.\n");
 				pthread_mutex_lock(&state_mutex);
 				ninjas_waiting--;
 				pthread_mutex_unlock(&state_mutex);
-				sleep(2);
-				printf("It is finished. %d of my friends are at the door, we are %d. -- Chair 2\n", pirates_waiting, ninjas_waiting);
-				if(pirates_waiting > ninjas_waiting) {
-					pthread_mutex_lock(&state_mutex);
+				sleep(5);
+				printf("Done! %d pirates, and %d ninjas. -- Chair 2 Ninja\n", pirates_waiting, ninjas_waiting);
+				if(pirates_waiting > 0) {
 					pthread_mutex_lock(&chair1);
+					pthread_mutex_lock(&state_mutex);
 					printf("I'm the last one here!\n");
 					room_state = PIRATE;
 					pthread_mutex_unlock(&chair1);
 					pthread_mutex_unlock(&state_mutex);
 				}
 				else if(ninjas_waiting == 0) {
-					pthread_mutex_lock(&state_mutex);
 					pthread_mutex_lock(&chair1);
+					pthread_mutex_lock(&state_mutex);
 					room_state = EMPTY;
 					pthread_mutex_unlock(&chair1);
 					pthread_mutex_unlock(&state_mutex);
