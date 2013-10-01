@@ -55,13 +55,15 @@ int main(int argc, char** argv) {
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	int i;
-	for(i = 0; i < NUM_CARS; i++)
-		pthread_create(&car_threads[i], &attr, (void*)&masshole, NULL);
-	// start the control threads
-	pthread_create(&control_threads[0], &attr, (void*)&car_control, NULL);
-	pthread_create(&control_threads[1], &attr, (void*)&car_control, NULL);
-	pthread_create(&control_threads[2], &attr, (void*)&car_control, NULL);
-	pthread_join(control_threads[0], NULL);
+	while(TRUE) {
+		for(i = 0; i < NUM_CARS; i++)
+			pthread_create(&car_threads[i], &attr, (void*)&masshole, NULL);
+		// start the control threads
+		pthread_create(&control_threads[0], &attr, (void*)&car_control, NULL);
+		pthread_create(&control_threads[1], &attr, (void*)&car_control, NULL);
+		pthread_create(&control_threads[2], &attr, (void*)&car_control, NULL);
+		pthread_join(control_threads[0], NULL);
+	}
 	return 0;
 }
 
@@ -162,25 +164,29 @@ car* get_car(car* head) {
 void car_control(void) {
 	while (TRUE) {
 		car* next_car = get_car(&car_queue);
-		if (next_car != NULL)
+		if (next_car != NULL) {
 			switch(next_car->from) {
 				case NORTH:
 					switch(next_car->turn) {
 						case LEFT:
 							sem_wait(&road_nw);
 							printf("Car %d entered NW\n", next_car->num);
+							sleep(rand()%3);
 							sem_wait(&road_sw);
 							printf("Car %d entered SW\n", next_car->num);
 							sem_post(&road_nw);
+							sleep(rand()%1);
 							sem_wait(&road_se);
 							printf("Car %d entered SE\n", next_car->num);
 							sem_post(&road_sw);
+							sleep(rand()%4);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_se);
 						break;
 						case STRAIGHT:
 							sem_wait(&road_nw);
 							printf("Car %d entered NW\n", next_car->num);
+							sleep(rand()%4);
 							sem_wait(&road_sw);
 							printf("Car %d entered SW\n", next_car->num);
 							sem_post(&road_nw);
@@ -289,6 +295,11 @@ void car_control(void) {
 					}
 				break;
 			}
+		}
+		else {
+			free(next_car);
+			pthread_exit(NULL);
+		}
 	}
 }
 
