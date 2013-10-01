@@ -3,6 +3,7 @@
 #include <semaphore.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 
 #define TRUE 1
@@ -19,9 +20,9 @@ sem_t road_nw;
 sem_t road_ne;
 sem_t road_sw;
 sem_t road_se;
+sem_t car_num;
 sem_t queue_lock;
 sem_t cars_waiting;
-int car_num;
 
 struct car_struct{
 	pthread_t thread;
@@ -41,14 +42,15 @@ void car_control(void);
 car car_queue;
 
 int main(int argc, char** argv) {
-	car_queue.next = &car_queue;
+	srand(time(NULL));
+	car_queue.next = NULL;
 	sem_init(&road_nw, 0, 1);
 	sem_init(&road_ne, 0, 1);
 	sem_init(&road_sw, 0, 1);
 	sem_init(&road_se, 0, 1);
 	sem_init(&queue_lock, 0, 1);
+	sem_init(&car_num, 0, 0);
 	sem_init(&cars_waiting, 0, 0);
-	car_num = 1;
 	pthread_t car_threads[NUM_CARS];
 	pthread_t control_threads[3]; // only three to avoid deadlock
 	pthread_attr_t attr;
@@ -63,6 +65,8 @@ int main(int argc, char** argv) {
 		pthread_create(&control_threads[1], &attr, (void*)&car_control, NULL);
 		pthread_create(&control_threads[2], &attr, (void*)&car_control, NULL);
 		pthread_join(control_threads[0], NULL);
+		pthread_join(control_threads[1], NULL);
+		pthread_join(control_threads[2], NULL);
 	}
 	return 0;
 }
@@ -75,10 +79,8 @@ void masshole(void) {
     this_car->thread = pthread_self();
     this_car->from = randRoad;
     this_car->turn = randDirection;
-    sem_wait(&queue_lock);
-    this_car->num = car_num;
-    car_num++;
-    sem_post(&queue_lock);
+    sem_post(&car_num);
+    sem_getvalue(&car_num, &(this_car->num));
     add_car(&car_queue, this_car);
     switch(this_car->from) {
         case NORTH:
@@ -110,13 +112,13 @@ void masshole(void) {
         case SOUTH:
             switch(this_car->turn) {
 		        case LEFT:
-		            printf("Car %d entering from south, going left...\n", car_num);
+		            printf("Car %d entering from south, going left...\n", this_car->num);
 		            break;
 		        case STRAIGHT:
-		            printf("Car %d entering from south, going straight...\n", car_num);
+		            printf("Car %d entering from south, going straight...\n", this_car->num);
 		            break;
 		        case RIGHT:
-		            printf("Car %d entering from south, going right...\n", car_num);
+		            printf("Car %d entering from south, going right...\n", this_car->num);
 		            break;
 		    }
             break;
@@ -139,26 +141,26 @@ void masshole(void) {
 void add_car(car* head, car* add) {
 	sem_wait(&queue_lock);
 	car* tail = head;
-	while (tail->next != head) {
+	while (tail->next != NULL) {
 		tail = tail->next;
 	}
-	add->next = head;
+	add->next = NULL;
 	tail->next = add;
 	sem_post(&cars_waiting);
 	sem_post(&queue_lock);
 }
 
 car* get_car(car* head) {
+	if (head->next == NULL) {
+		printf("No more cars! Start again.\n");
+		return NULL;
+	}
 	sem_wait(&cars_waiting);
 	sem_wait(&queue_lock);
 	car* next_car = head->next;
 	head->next = next_car->next;
 	sem_post(&queue_lock);
-	if (next_car == head) {
-		return NULL;
-	} else {
-		return next_car;
-	}
+	return next_car;
 }
 
 void car_control(void) {
@@ -175,7 +177,6 @@ void car_control(void) {
 							sem_wait(&road_sw);
 							printf("Car %d entered SW\n", next_car->num);
 							sem_post(&road_nw);
-							sleep(rand()%1);
 							sem_wait(&road_se);
 							printf("Car %d entered SE\n", next_car->num);
 							sem_post(&road_sw);
@@ -191,6 +192,7 @@ void car_control(void) {
 							printf("Car %d entered SW\n", next_car->num);
 							sem_post(&road_nw);
 							printf("Car %d exited\n", next_car->num);
+							sleep(rand()%1);
 							sem_post(&road_sw);
 						break;
 						case RIGHT:
@@ -207,9 +209,11 @@ void car_control(void) {
 							sem_wait(&road_ne);
 							printf("Car %d entered NE\n", next_car->num);
 							sem_wait(&road_nw);
+							sleep(rand()%3);
 							printf("Car %d entered NW\n", next_car->num);
 							sem_post(&road_ne);
 							sem_wait(&road_sw);
+							sleep(rand()%4);
 							printf("Car %d entered SW\n", next_car->num);
 							sem_post(&road_nw);
 							printf("Car %d exited\n", next_car->num);
@@ -217,15 +221,18 @@ void car_control(void) {
 						break;
 						case STRAIGHT:
 							sem_wait(&road_ne);
+							sleep(rand()%1);
 							printf("Car %d entered NE\n", next_car->num);
 							sem_wait(&road_nw);
 							printf("Car %d entered NW\n", next_car->num);
 							sem_post(&road_ne);
+							sleep(rand()%4);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_nw);
 						break;
 						case RIGHT:
 							sem_wait(&road_ne);
+							sleep(rand()%1);
 							printf("Car %d entered NE\n", next_car->num);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_ne);
@@ -237,10 +244,12 @@ void car_control(void) {
 						case LEFT:
 							sem_wait(&road_se);
 							printf("Car %d entered SE\n", next_car->num);
+							sleep(rand()%1);
 							sem_wait(&road_ne);
 							printf("Car %d entered NE\n", next_car->num);
 							sem_post(&road_se);
 							sem_wait(&road_nw);
+							sleep(rand()%4);
 							printf("Car %d entered NW\n", next_car->num);
 							sem_post(&road_ne);
 							printf("Car %d exited\n", next_car->num);
@@ -250,13 +259,16 @@ void car_control(void) {
 							sem_wait(&road_se);
 							printf("Car %d entered SE\n", next_car->num);
 							sem_wait(&road_ne);
+							sleep(rand()%1);
 							printf("Car %d entered NE\n", next_car->num);
 							sem_post(&road_se);
+							sleep(rand()%3);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_ne);
 						break;
 						case RIGHT:
 							sem_wait(&road_se);
+							sleep(rand()%3);
 							printf("Car %d entered SE\n", next_car->num);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_se);
@@ -270,10 +282,12 @@ void car_control(void) {
 							printf("Car %d entered SW\n", next_car->num);
 							sem_wait(&road_se);
 							printf("Car %d entered SE\n", next_car->num);
+							sleep(rand()%3);
 							sem_post(&road_sw);
 							sem_wait(&road_ne);
 							printf("Car %d entered NE\n", next_car->num);
 							sem_post(&road_se);
+							sleep(rand()%3);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_ne);
 						break;
@@ -281,6 +295,7 @@ void car_control(void) {
 							sem_wait(&road_sw);
 							printf("Car %d entered SW\n", next_car->num);
 							sem_wait(&road_se);
+							sleep(rand()%3);
 							printf("Car %d entered SE\n", next_car->num);
 							sem_post(&road_sw);
 							printf("Car %d exited\n", next_car->num);
@@ -288,6 +303,7 @@ void car_control(void) {
 						break;
 						case RIGHT:
 							sem_wait(&road_sw);
+							sleep(rand()%3);
 							printf("Car %d entered SW\n", next_car->num);
 							printf("Car %d exited\n", next_car->num);
 							sem_post(&road_sw);
