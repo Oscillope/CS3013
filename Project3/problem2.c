@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#define TRUE 1
 #define NUM_CARS 20
 #define LEFT 0
 #define STRAIGHT 1
@@ -18,47 +19,49 @@ sem_t road_nw;
 sem_t road_ne;
 sem_t road_sw;
 sem_t road_se;
+sem_t queue_lock;
+sem_t cars_waiting;
+int car_num;
 
 struct car_struct{
 	pthread_t thread;
 	char from;
 	char turn;
+	int num;
 	struct car_struct* next;
 };
 typedef struct car_struct car;
 
 void masshole(void);
 void add_car(car* head, car* add);
+car* get_car(car* head);
+void car_control(void);
 
-// Initialize us some linked lists
-car north_cars;
-car east_cars;
-car south_cars;
-car west_cars;
-
+// FIFO queue for all cars, regardless of direction
+car car_queue;
 
 int main(int argc, char** argv) {
-	north_cars.next = &north_cars;
-	east_cars.next = &east_cars;
-	south_cars.next = &south_cars;
-	west_cars.next = &west_cars;
-    sem_init(&road_nw, 0, 1);
-    sem_init(&road_ne, 0, 1);
-    sem_init(&road_sw, 0, 1);
-    sem_init(&road_se, 0, 1);
+	car_queue.next = &car_queue;
+	sem_init(&road_nw, 0, 1);
+	sem_init(&road_ne, 0, 1);
+	sem_init(&road_sw, 0, 1);
+	sem_init(&road_se, 0, 1);
+	sem_init(&queue_lock, 0, 1);
+	sem_init(&cars_waiting, 0, 0);
+	car_num = 1;
 	pthread_t car_threads[NUM_CARS];
-	pthread_t control_threads[4];
+	pthread_t control_threads[3]; // only three to avoid deadlock
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 	int i;
 	for(i = 0; i < NUM_CARS; i++)
 		pthread_create(&car_threads[i], &attr, (void*)&masshole, NULL);
-	/*pthread_create(&control_threads[0], &attr, (void*)&control_north, NULL);
-	pthread_create(&control_threads[1], &attr, (void*)&control_east, NULL);
-	pthread_create(&control_threads[2], &attr, (void*)&control_south, NULL);
-	pthread_create(&control_threads[3], &attr, (void*)&control_west, NULL);*/
-	pthread_join(car_threads[NUM_CARS-1], NULL);
+	// start the control threads
+	pthread_create(&control_threads[0], &attr, (void*)&car_control, NULL);
+	pthread_create(&control_threads[1], &attr, (void*)&car_control, NULL);
+	pthread_create(&control_threads[2], &attr, (void*)&car_control, NULL);
+	pthread_join(control_threads[0], NULL);
 	return 0;
 }
 
@@ -66,69 +69,65 @@ void masshole(void) {
     int random = rand();
     int randRoad = (random % 4) + 3;
     int randDirection = random % 3;
-    car this_car;
-    this_car.thread = pthread_self();
-    this_car.from = randRoad;
-    this_car.turn = randDirection;
-    unsigned long int car_num = (unsigned long int)this_car.thread;
-    switch(randRoad) {
+    car* this_car = malloc(sizeof(car));
+    this_car->thread = pthread_self();
+    this_car->from = randRoad;
+    this_car->turn = randDirection;
+    sem_wait(&queue_lock);
+    this_car->num = car_num;
+    car_num++;
+    sem_post(&queue_lock);
+    add_car(&car_queue, this_car);
+    switch(this_car->from) {
         case NORTH:
-            printf("Car %#02lx entering from the north!\n", car_num);
-            add_car(&north_cars, &this_car);
-            switch(randDirection) {
+            switch(this_car->turn) {
 		        case LEFT:
-		            printf("Car %#02lx going left!\n", car_num);
+		            printf("Car %d entering from north, going left...\n", this_car->num);
 		            break;
 		        case STRAIGHT:
-		            printf("Car %#02lx going straight!\n", car_num);
+		            printf("Car %d entering from north, going straight...\n", this_car->num);
 		            break;
 		        case RIGHT:
-		            printf("Car %#02lx going right!\n", car_num);
+		            printf("Car %d entering from north, going right...\n", this_car->num);
 		            break;
 		    }
 			break;
         case EAST:
-            printf("Car %#02lx entering from the east!\n", car_num);
-            add_car(&east_cars, &this_car);
-            switch(randDirection) {
+            switch(this_car->turn) {
 		        case LEFT:
-		            printf("Car %#02lx going left!\n", car_num);
+		            printf("Car %d entering from east, going left...\n", this_car->num);
 		            break;
 		        case STRAIGHT:
-		            printf("Car %#02lx going straight!\n", car_num);
+		            printf("Car %d entering from east, going straight...\n", this_car->num);
 		            break;
 		        case RIGHT:
-		            printf("Car %#02lx going right!\n", car_num);
+		            printf("Car %d entering from east, going right...\n", this_car->num);
 		            break;
 		    }
             break;
         case SOUTH:
-            printf("Car %#02lx entering from the south!\n", car_num);
-            add_car(&south_cars, &this_car);
-            switch(randDirection) {
+            switch(this_car->turn) {
 		        case LEFT:
-		            printf("Car %#02lx going left!\n", car_num);
+		            printf("Car %d entering from south, going left...\n", car_num);
 		            break;
 		        case STRAIGHT:
-		            printf("Car %#02lx going straight!\n", car_num);
+		            printf("Car %d entering from south, going straight...\n", car_num);
 		            break;
 		        case RIGHT:
-		            printf("Car %#02lx going right!\n", car_num);
+		            printf("Car %d entering from south, going right...\n", car_num);
 		            break;
 		    }
             break;
         case WEST:
-            printf("Car %#02lx entering from the west!\n", car_num);
-            add_car(&west_cars, &this_car);
-            switch(randDirection) {
+            switch(this_car->turn) {
 		        case LEFT:
-		            printf("Car %#02lx going left!\n", car_num);
+		            printf("Car %d entering from west, going left...\n", this_car->num);
 		            break;
 		        case STRAIGHT:
-		            printf("Car %#02lx going straight!\n", car_num);
+		            printf("Car %d entering from west, going straight...\n", this_car->num);
 		            break;
 		        case RIGHT:
-		            printf("Car %#02lx going right!\n", car_num);
+		            printf("Car %d entering from west, going right...\n", this_car->num);
 		            break;
 		    }
             break;
@@ -136,6 +135,160 @@ void masshole(void) {
 }
 
 void add_car(car* head, car* add) {
-	add->next = head->next;
-	head->next = add;
+	sem_wait(&queue_lock);
+	car* tail = head;
+	while (tail->next != head) {
+		tail = tail->next;
+	}
+	add->next = head;
+	tail->next = add;
+	sem_post(&cars_waiting);
+	sem_post(&queue_lock);
 }
+
+car* get_car(car* head) {
+	sem_wait(&cars_waiting);
+	sem_wait(&queue_lock);
+	car* next_car = head->next;
+	head->next = next_car->next;
+	sem_post(&queue_lock);
+	if (next_car == head) {
+		return NULL;
+	} else {
+		return next_car;
+	}
+}
+
+void car_control(void) {
+	while (TRUE) {
+		car* next_car = get_car(&car_queue);
+		if (next_car != NULL)
+			switch(next_car->from) {
+				case NORTH:
+					switch(next_car->turn) {
+						case LEFT:
+							sem_wait(&road_nw);
+							printf("Car %d entered NW\n", next_car->num);
+							sem_wait(&road_sw);
+							printf("Car %d entered SW\n", next_car->num);
+							sem_post(&road_nw);
+							sem_wait(&road_se);
+							printf("Car %d entered SE\n", next_car->num);
+							sem_post(&road_sw);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_se);
+						break;
+						case STRAIGHT:
+							sem_wait(&road_nw);
+							printf("Car %d entered NW\n", next_car->num);
+							sem_wait(&road_sw);
+							printf("Car %d entered SW\n", next_car->num);
+							sem_post(&road_nw);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_sw);
+						break;
+						case RIGHT:
+							sem_wait(&road_nw);
+							printf("Car %d entered NW\n", next_car->num);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_nw);
+						break;
+					}
+				break;
+				case EAST:
+					switch(next_car->turn) {
+						case LEFT:
+							sem_wait(&road_ne);
+							printf("Car %d entered NE\n", next_car->num);
+							sem_wait(&road_nw);
+							printf("Car %d entered NW\n", next_car->num);
+							sem_post(&road_ne);
+							sem_wait(&road_sw);
+							printf("Car %d entered SW\n", next_car->num);
+							sem_post(&road_nw);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_sw);
+						break;
+						case STRAIGHT:
+							sem_wait(&road_ne);
+							printf("Car %d entered NE\n", next_car->num);
+							sem_wait(&road_nw);
+							printf("Car %d entered NW\n", next_car->num);
+							sem_post(&road_ne);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_nw);
+						break;
+						case RIGHT:
+							sem_wait(&road_ne);
+							printf("Car %d entered NE\n", next_car->num);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_ne);
+						break;
+					}
+				break;
+				case SOUTH:
+					switch(next_car->turn) {
+						case LEFT:
+							sem_wait(&road_se);
+							printf("Car %d entered SE\n", next_car->num);
+							sem_wait(&road_ne);
+							printf("Car %d entered NE\n", next_car->num);
+							sem_post(&road_se);
+							sem_wait(&road_nw);
+							printf("Car %d entered NW\n", next_car->num);
+							sem_post(&road_ne);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_nw);
+						break;
+						case STRAIGHT:
+							sem_wait(&road_se);
+							printf("Car %d entered SE\n", next_car->num);
+							sem_wait(&road_ne);
+							printf("Car %d entered NE\n", next_car->num);
+							sem_post(&road_se);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_ne);
+						break;
+						case RIGHT:
+							sem_wait(&road_se);
+							printf("Car %d entered SE\n", next_car->num);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_se);
+						break;
+					}
+				break;
+				case WEST:
+					switch(next_car->turn) {
+						case LEFT:
+							sem_wait(&road_sw);
+							printf("Car %d entered SW\n", next_car->num);
+							sem_wait(&road_se);
+							printf("Car %d entered SE\n", next_car->num);
+							sem_post(&road_sw);
+							sem_wait(&road_ne);
+							printf("Car %d entered NE\n", next_car->num);
+							sem_post(&road_se);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_ne);
+						break;
+						case STRAIGHT:
+							sem_wait(&road_sw);
+							printf("Car %d entered SW\n", next_car->num);
+							sem_wait(&road_se);
+							printf("Car %d entered SE\n", next_car->num);
+							sem_post(&road_sw);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_se);
+						break;
+						case RIGHT:
+							sem_wait(&road_sw);
+							printf("Car %d entered SW\n", next_car->num);
+							printf("Car %d exited\n", next_car->num);
+							sem_post(&road_sw);
+						break;
+					}
+				break;
+			}
+	}
+}
+
