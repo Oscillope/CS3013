@@ -1,0 +1,9 @@
+Jason Rosenman & Neil Pomerleau
+
+Problem 1: Pirates and Ninjas
+
+Our solution uses two mutexes (chair1 and chair2) to lock each of the two chairs in the room and another mutex (state_mutex) to prevent state variables (room_state, pirates_waiting, and ninjas_waiting) from being manipulated by more than one thread. A fourth mutex (room_lock) allows threads to wait on a condition variable (room_cv) that indicates a chair is available.
+
+The room starts in an EMPTY state. An arriving pirate or ninja atomically checks (using the state_mutex) if the room is EMPTY, and sets the state for his people (either PIRATE or NINJA) if it is. Suppose a pirate reached first. With the room_state set to PIRATE, newly arriving ninjas will see that the room state is not in their favor and go to sleep waiting for the condition variable. Pirates, are allowed to enter the room and try to lock one of the chairs. If both chairs are already locked, the pirate will leave and go to sleep like the ninjas. If a pirate is successful in securing a chair, he decrements the number of pirates waiting atomically (again using state_mutex).
+
+When it is done (after a couple seconds), it checks if there are any ninjas waiting. If so, it locks the other chair (waiting for the lock to be released by the other pirate if necessary) to prevent another pirate from coming in, atomically changes the room state to NINJA, releases the lock on his chair, and broadcasts to inform pirates and ninjas waiting on the condition variable that the room is available. This switching provides fairness. If nobody is waiting on the room, the state is atomically set to EMPTY instead. Otherwise, he simply unlocks his chair and lets the next pirate enter the room.

@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall -pthread
 
-all: problem1
+all: problem1 problem2
 debug: CFLAGS += -DDEBUG -ggdb
-debug: problem1
+debug: problem1 problem2
 
 problem1: problem1.o
 	$(CC) $(CFLAGS) problem1.o -o problem1

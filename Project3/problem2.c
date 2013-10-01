@@ -1,3 +1,5 @@
+//Jason Rosenman & Neil Pomerleau
+
 #include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>

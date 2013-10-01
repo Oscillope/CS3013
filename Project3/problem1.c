@@ -1,3 +1,5 @@
+//Jason Rosenman & Neil Pomerleau
+
 #include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -132,7 +134,7 @@ void ninja(void) {
 			pthread_mutex_unlock(&state_mutex);
 		}
 		pthread_mutex_lock(&state_mutex);
-		if(room_state == NINJA && ninjas_waiting >= 0) {
+		if(room_state == NINJA && ninjas_waiting > 0) {
 			if(pthread_mutex_trylock(&chair1) != EBUSY) {
 				pthread_mutex_unlock(&state_mutex);
 				printf("Getting a ninja suit in chair 1.\n");

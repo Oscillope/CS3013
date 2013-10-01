@@ -1,0 +1,12 @@
+Jason Rosenman & Neil Pomerleau
+
+Problem 2: Massachusetts Drivers
+
+Phase 1:
+	The Minnesotan drivers put a lock on the entire intersection for the duration of their turn. This is not optimal because only one driver is able to go at a time, even if there is the possibility for two or more to proceed.
+	
+Phase 2:
+	This mindset can produce a deadlock if all 4 drivers want to go in a direction that is not a right turn. They will each move into the quadrant closest to them and nobody else will be able to go. Such a deadlock can be prevented in several ways. First, by only allowing 3 drivers to go at a time.
+	
+Our solution:
+	Our program creates 20 car threads. The car threads randomly choose a source road and direction of travel and then join a queue (specifically, a linked list). We also create 3 control threads. The control threads run concurrently, incrementing and decrementing semaphores representing each intersection quadrant. Each thread will select a car from the queue and help it on its journey across the intersection. The main process joins each control thread sequentially. Once all 3 have exited, it loops and spawns more car threads and a new set of control threads.
