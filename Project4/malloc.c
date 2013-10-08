@@ -1,3 +1,5 @@
+//Jason Rosenman & Neil Pomerleau
+
 #include "malloc.h"
 
 void* head = NULL;

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+//Jason Rosenman
+
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/time.h>

@@ -1,3 +1,5 @@
+#Jason Rosenman & Neil Pomerleau
+
 CC = gcc
 CFLAGS = -Wall -pthread
 
