@@ -5,7 +5,7 @@ CFLAGS = -Wall -pthread
 
 all: meh_malloc test_malloc shell shell2
 debug: CFLAGS += -DDEBUG -ggdb
-debug: meh_malloc test_malloc
+debug: meh_malloc test_malloc shell shell2
 
 meh_malloc:
 	$(CC) $(CFLAGS) -c meh_malloc.c
