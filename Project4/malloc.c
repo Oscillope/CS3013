@@ -1,6 +1,4 @@
 //Jason Rosenman & Neil Pomerleau
-//TODO: Instead of making the pointers a char* and casting to int*, make a void* and cast to char* for arithmetic.
-//Also use more structs
 
 #include "malloc.h"
 
@@ -60,10 +58,21 @@ void* malloc(size_t size) {
 void free(void* ptr) {
 	printf("Called free!\n");
 	cur = (char*)ptr - 20;
-	if(cur->checksum == 1)
+	if(cur->checksum == 1) {
 		cur->block_size = cur->proc_size + 20;
-	else
+		if (cur->prev != NULL) {
+        		cur->prev->next = cur->next;
+        	}
+	} else {
 		fprintf(stderr, "Not a valid memory location.\n");
+	}
 	return;
 }
 
+void *calloc(size_t nmemb, size_t size) {
+	return;
+}
+
+void *realloc(void *ptr, size_t size) {
+	return;
+}
