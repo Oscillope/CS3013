@@ -39,9 +39,9 @@ void* malloc(size_t size) {
 			cur->next = NULL;
 		}
 	}
-	/*#ifdef DEBUG
+	#ifdef DEBUG
 		printf("My %d-byte block starts at %p, I'm going to give the process a %d byte block starting at %p.\n", cur->block_size, cur, size, (cur + 1));
-	#endif*/
+	#endif
 	free_space -= (size + 20);
 	cur->block_size = 0;					//We're going to write here, so the block is no longer free.
 	if(cur->next != (char*)cur + size + 20) {
@@ -56,7 +56,9 @@ void* malloc(size_t size) {
 }
 
 void free(void* ptr) {
-	printf("Called free!\n");
+	if(ptr == NULL)
+		return;
+	printf("Called free on %p!\n", ptr);
 	cur = (char*)ptr - 20;
 	if(cur->checksum == 1) {
 		cur->block_size = cur->proc_size + 20;
