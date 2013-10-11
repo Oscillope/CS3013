@@ -30,7 +30,7 @@ void* malloc(size_t size) {
 		free_space = chunk_size;
 		cur = head;
 		cur->block_size = chunk_size;
-		cur->next = (char*)cur + size + 20;	//Set up an emty header for next.
+		cur->next = (mem_list*)((char*)cur + size + 20);	//Set up an emty header for next.
 		cur->prev = NULL;	//The beginning of the list should never have a previous.
 	}
 	else {
@@ -45,7 +45,7 @@ void* malloc(size_t size) {
 					if(cur == NULL)
 						return cur;
 					cur->block_size = chunk_size;
-					cur->next = (char*)cur + size + 20;
+					cur->next = (mem_list*)((char*)cur + size + 20);
 					cur->prev = old_cur->prev;
 					if(cur->prev != NULL)
 						cur->prev->next = cur;
@@ -55,12 +55,12 @@ void* malloc(size_t size) {
 					free_space += chunk_size;
 					cur->next = (mem_list*)sbrk(chunk_size);
 					cur->next->block_size = chunk_size;
-					cur->next->next = (char*)cur->next + size + 20;
+					cur->next->next = (mem_list*)((char*)cur->next + size + 20);
 					cur->next->prev = cur;
 				}
 			}
 			else
-				cur->next = (char*)cur + size + 20;
+				cur->next = (mem_list*)((char*)cur + size + 20);
 		}
 		
 	}

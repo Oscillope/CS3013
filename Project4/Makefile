@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -Wall -pthread
 
-all: test_malloc stress_malloc shell shell2
+all: stress_malloc shell shell2
 debug: CFLAGS += -DDEBUG -ggdb
 debug: test_malloc stress_malloc shell shell2
 

@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
 		printf("	Failed!\n");
 	printf("Testing 1-size malloc.\n");
 	char* a_byte = malloc(1);
-	a_byte = 'a';
-	printf("	The value of a_byte is %c.\n", a_byte);
+	*a_byte = 'a';
+	printf("	The value of a_byte is %c.\n", *a_byte);
 	printf("Trying to allocate a very large amount of space.\n");
 	char* bigstring;
 	bigstring = malloc(1234567);
