@@ -51,7 +51,7 @@ void* malloc(size_t size) {
 	}
 	cur->next->prev = cur;			//Set the next header's previous pointer to where we are now.
 	cur->proc_size = size;
-	cur->checksum = 1;				//There will be a checksum here eventually.
+	cur->checksum = 0xFFFFFFF;				//There will be a checksum here eventually.
 	return (void*)(cur + 1);
 }
 
@@ -59,8 +59,8 @@ void free(void* ptr) {
 	if(ptr == NULL)
 		return;
 	printf("Called free on %p!\n", ptr);
-	cur = (char*)ptr - 20;
-	if(cur->checksum == 1) {
+	cur = ptr - 20;
+	if(cur->checksum == 0xFFFFFFF) {
 		cur->block_size = cur->proc_size + 20;
 		if (cur->prev != NULL) {
         		cur->prev->next = cur->next;
