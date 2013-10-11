@@ -70,9 +70,15 @@ void free(void* ptr) {
 }
 
 void *calloc(size_t nmemb, size_t size) {
-	return;
+	size = size * nmemb;
+	void *ptr = malloc(size);
+	bzero(ptr, size);
+	return ptr;
 }
 
 void *realloc(void *ptr, size_t size) {
-	return;
+	void *dst = malloc(size);
+	bcopy(ptr, dst, size);
+	free(ptr);
+	return dst;
 }
