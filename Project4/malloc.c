@@ -64,7 +64,10 @@ void free(void* ptr) {
 		cur->block_size = cur->proc_size + 20;
 		if (cur->prev != NULL) {
         		cur->prev->next = cur->next;
-        	}
+        }
+        else if (cur->next != NULL) {
+			cur->next->prev = cur->prev;
+		}
 	} else {
 		fprintf(stderr, "Not a valid memory location.\n");
 	}
