@@ -32,8 +32,8 @@ void* malloc(size_t size) {
 		cur->prev = NULL;	//The beginning of the list should never have a previous.
 	}
 	else if(cur->block_size == 0) {
-		while(cur->next != NULL && cur->block_size < size + 32) cur = cur->next;
-		if(size + 32 >= free_space) {
+		while(cur->next != NULL && cur->block_size < size + 20) cur = cur->next;
+		if(cur->next == NULL && size + 32 >= cur->block_size) {
 			chunk_size += size * 10;
 			free_space += size * 10;
 			cur = (mem_list*)sbrk(size * 10);
@@ -46,9 +46,11 @@ void* malloc(size_t size) {
 	#endif
 	free_space -= (size + 20);
 	cur->block_size = 0;					//We're going to write here, so the block is no longer free.
-	cur->next = (char*)cur + size + 20;	//Set the next pointer to where the next header is going to be.
-	cur->next->block_size = free_space;
-	cur->next->next = NULL;
+	if(cur->next != (char*)cur + size + 20) {
+		cur->next = (char*)cur + size + 20;	//Set the next pointer to where the next header is going to be.
+		cur->next->block_size = free_space;
+		cur->next->next = NULL;
+	}
 	cur->next->prev = cur;			//Set the next header's previous pointer to where we are now.
 	cur->proc_size = size;
 	cur->checksum = 1;				//There will be a checksum here eventually.
@@ -58,6 +60,8 @@ void* malloc(size_t size) {
 
 void free(void* ptr) {
 	printf("Called free on %p!\n", ptr);
+	cur = ptr - 12;
+	cur->block_size = cur->proc_size + 20;
 	return;
 }
 
