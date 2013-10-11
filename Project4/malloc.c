@@ -1,6 +1,4 @@
 //Jason Rosenman & Neil Pomerleau
-//TODO: Instead of making the pointers a char* and casting to int*, make a void* and cast to char* for arithmetic.
-//Also use more structs
 
 #include "malloc.h"
 
